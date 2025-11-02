@@ -6,39 +6,30 @@ jobs:
   ilshidur:
     runs-on: ubuntu-latest
     env:
-      # Optional: set in Repo Settings → Variables → LOREM_LENGTH, else default used in Python
+      # Set this in repo "Variables" (optional). If unset, defaults to 500.
       LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
-      # REQUIRED: set in Repo Settings → Secrets and variables → Actions → Secrets → DISCORD_HOOK
+      # Set this in repo "Secrets": DISCORD_HOOK
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_HOOK }}
 
     steps:
-      - name: Checkout (for completeness, even if not used)
+      - name: Checkout (optional)
         uses: actions/checkout@v4
 
-      - name: Build embeds JSON and export as DISCORD_EMBEDS
+      - name: Build embeds JSON
         shell: bash
         run: |
           set -euo pipefail
+          python3 -c 'import os,json
+n=int(os.getenv("LOREM_LENGTH") or "500")
+base="Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+s=(base*((n//len(base))+2))[:n]
+embeds={"embeds":[{"title":"Lorem sample (Ilshidur)","description":f"```text\n{s}\n```"}]}
+open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=False))'
 
-          # Build the JSON file
-          python3 - <<'PY'
-          import os, json
-          n = int(os.environ.get("LOREM_LENGTH") or 500)  # default if repo var is unset
-          base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-          s = (base * ((n // len(base)) + 2))[:n]
-          embeds = {
-            "embeds": [
-              {
-                "title": "Lorem sample (Ilshidur)",
-                "description": f"```text\n{s}\n```"
-              }
-            ]
-          }
-          with open("embeds.json","w",encoding="utf-8") as f:
-              json.dump(embeds, f, ensure_ascii=False)
-                PY
-
-          # Export multi-line env var to $GITHUB_ENV via a unique delimiter
+      - name: Export DISCORD_EMBEDS to env
+        shell: bash
+        run: |
+          set -euo pipefail
           {
             echo 'DISCORD_EMBEDS<<__EMBEDS__'
             cat embeds.json
@@ -53,8 +44,8 @@ jobs:
         with:
           args: "sending embed…"
 
-      # Optional: simple sanity checks / logging
+      # Optional: quick sanity check
       - name: Log payload size
         if: always()
-        run: |
-          echo "Embeds bytes: $(wc -c < embeds.json)"
+        shell: bash
+        run: wc -c < embeds.json
