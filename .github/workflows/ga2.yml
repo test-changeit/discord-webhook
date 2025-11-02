@@ -25,7 +25,7 @@ jobs:
           payload = {
             "embeds": [{
               "type": "rich",
-              "title": "Lorem sample (embed)",
+              "title": "Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)",
               "description": f"```text\n{s}\n```"
             }]
           }
