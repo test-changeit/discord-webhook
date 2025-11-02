@@ -13,8 +13,15 @@ jobs:
           LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
           DISCORD_HOOK: ${{ secrets.DISCORD_HOOK }}
         run: |
-          alaki="$(yes 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. ' | tr -d '\n' | head -c "$LOREM_LENGTH")"
-
+          alaki="$(
+            python3 - <<'PY'
+          import os
+          n = int(os.environ["LOREM_LENGTH"])
+          base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+          s = (base * ((n // len(base)) + 2))[:n]
+          print(s, end="")
+          PY
+          )"
           echo "$alaki"
 
           curl -X POST -H "Content-Type: application/json" \
