@@ -17,7 +17,7 @@ jobs:
           python3 - <<'PY'
           import os, json
           n = int(os.environ["LOREM_LENGTH"])
-          base = "@rosen-bridge/bitcoin-runes-observation-extractor@0.3.0-82c56984"
+          base = "@rosen-bridge/bitcoin-runes-observation-extractor@0.3.0-82c56984\n"
           s = (base * ((n // len(base)) + 2))[:n]
 
           s = s[:4084]
