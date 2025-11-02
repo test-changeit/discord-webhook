@@ -1,0 +1,47 @@
+name: Discord Lorem (push)
+# 4096 embed.description => 4084 usable when wrapped in ```text
+on:
+  push:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate lorem and post to Discord (as embed)
+        shell: bash
+        env:
+          LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
+          DISCORD_HOOK: ${{ secrets.DISCORD_HOOK }}
+        run: |
+          set -euo pipefail
+
+          alaki="$(
+            python3 - <<'PY'
+          import os
+          n = int(os.environ["LOREM_LENGTH"])
+          base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+          s = (base * ((n // len(base)) + 2))[:n]
+          print(s, end="")
+          PY
+          )"
+          echo "$alaki"
+
+          resp="$(
+            curl -s -X POST -H "Content-Type: application/json" \
+              -d '{
+                "embeds": [{
+                  "type": "rich",
+                  "title": "Lorem sample (embed)",
+                  "description": "```text\n'"$alaki"'\n```"
+                }]
+              }' "$DISCORD_HOOK"
+          )"
+
+          echo "::notice::Discord response: $resp"
+
+          # اگر از 4096 (یا 4084 با کدفِنس) رد شود، معمولاً چنین پیامی می‌آید:
+          # {"embeds":{"0":{"description":["Must be 4096 or fewer in length."]}}}
+          if echo "$resp" | grep -q 'Must be 4096 or fewer in length'; then
+            echo "Discord rejected: embed.description > 4096 chars (remember 4084 usable with ```text)"
+            exit 1
+          fi
