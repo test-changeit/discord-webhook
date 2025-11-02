@@ -32,7 +32,7 @@ jobs:
           echo "json=$(cat body.json)" >> "$GITHUB_OUTPUT"
 
       - name: Send via joelwmale/webhook-action
-        uses: joelwmale/webhook-action@v2.4.1
+        uses: joelwmale/webhook-action@master
         with:
           url: ${{ env.DISCORD_HOOK }}
           headers: '{"Content-Type":"application/json"}'
