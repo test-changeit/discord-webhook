@@ -1,5 +1,5 @@
 name: Discord Lorem (push)
-#4096 char
+#4096 -> 4084 -> fail
 on:
   push:
 
