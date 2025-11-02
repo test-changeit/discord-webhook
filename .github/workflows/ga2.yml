@@ -1,5 +1,4 @@
 name: Discord Lorem (push)
-# 4096 embed.description => 4084 usable when wrapped in ```text
 on:
   push:
 
@@ -15,33 +14,27 @@ jobs:
         run: |
           set -euo pipefail
 
-          alaki="$(
-            python3 - <<'PY'
-          import os
+          python3 - <<'PY'
+          import os, json
           n = int(os.environ["LOREM_LENGTH"])
           base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
           s = (base * ((n // len(base)) + 2))[:n]
-          print(s, end="")
-          PY
-          )"
-          echo "$alaki"
 
-          resp="$(
-            curl -s -X POST -H "Content-Type: application/json" \
-              -d '{
-                "embeds": [{
-                  "type": "rich",
-                  "title": "Lorem sample (embed)",
-                  "description": "```text\n'"$alaki"'\n```"
-                }]
-              }' "$DISCORD_HOOK"
-          )"
+          s = s[:4084]
+
+          payload = {
+            "embeds": [{
+              "type": "rich",
+              "title": "Lorem sample (embed)",
+              "description": f"```text\n{s}\n```"
+            }]
+          }
+          open("payload.json","w",encoding="utf-8").write(
+            json.dumps(payload, ensure_ascii=False, separators=(",",":"))
+          )
+          PY
+
+          resp="$(curl -sS -f -H "Content-Type: application/json" \
+                    --data-binary @payload.json "$DISCORD_HOOK?wait=true")"
 
           echo "::notice::Discord response: $resp"
-
-          # اگر از 4096 (یا 4084 با کدفِنس) رد شود، معمولاً چنین پیامی می‌آید:
-          # {"embeds":{"0":{"description":["Must be 4096 or fewer in length."]}}}
-          if echo "$resp" | grep -q 'Must be 4096 or fewer in length'; then
-            echo "Discord rejected: embed.description > 4096 chars (remember 4084 usable with ```text)"
-            exit 1
-          fi
