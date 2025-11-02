@@ -8,11 +8,13 @@ jobs:
       LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
       DISCORD_HOOK: ${{ secrets.DISCORD_HOOK }}
     steps:
-      - name: Build body.json (embed with ```text)
+      - name: Build body (embed with ```text)
+        id: build
         run: |
+          set -euo pipefail
           python3 - <<'PY'
           import os, json
-          n = int(os.environ["LOREM_LENGTH"])
+          n = int(os.getenv("LOREM_LENGTH") or "4000")
           base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
           s = (base * ((n // len(base)) + 2))[:n]
           payload = {
@@ -21,11 +23,17 @@ jobs:
               "description": f"```text\n{s}\n```"
             }]
           }
-          open("body.json","w",encoding="utf-8").write(json.dumps(payload, ensure_ascii=False))
+          # JSON فشرده تا خروجی یک‌خطی شود
+          open("body.json","w",encoding="utf-8").write(
+            json.dumps(payload, ensure_ascii=False, separators=(',',':'))
+          )
           PY
+          # خواندن فایل و گذاشتن در خروجی استپ
+          echo "json=$(cat body.json)" >> "$GITHUB_OUTPUT"
+
       - name: Send via joelwmale/webhook-action
         uses: joelwmale/webhook-action@v2.4.1
         with:
           url: ${{ env.DISCORD_HOOK }}
           headers: '{"Content-Type":"application/json"}'
-          body: ${{ file('./body.json') }}
+          body: ${{ steps.build.outputs.json }}
