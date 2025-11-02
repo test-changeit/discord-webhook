@@ -24,7 +24,17 @@ jobs:
           )"
           echo "$alaki"
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d '{
-              "content": "```text\n'"$alaki"'\n```"
-            }' "$DISCORD_HOOK"
+          resp="$(
+            curl -s -X POST -H "Content-Type: application/json" \
+              -d '{
+                "content": "```text\n'"$alaki"'\n```"
+              }' "$DISCORD_HOOK"
+          )"
+
+
+          echo "::notice::Discord response: $resp"
+
+          if [ "$resp" = '{"content": ["Must be 2000 or fewer in length."]}' ]; then
+            echo "Discord rejected: content > 2000 chars"
+            exit 1
+          fi
