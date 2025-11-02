@@ -24,7 +24,7 @@ jobs:
           open("payload.json","w",encoding="utf-8").write(json.dumps(payload, ensure_ascii=False))
           PY
       - name: Send via tsickert/discord-webhook
-        uses: tsickert/discord-webhook@v7
+        uses: tsickert/discord-webhook@v7.0.0
         with:
           webhook-url: ${{ env.DISCORD_HOOK }}
           raw-data: payload.json
