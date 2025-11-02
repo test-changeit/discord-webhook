@@ -38,3 +38,11 @@ jobs:
                     --data-binary @payload.json "$DISCORD_HOOK?wait=true")"
 
           echo "::notice::Discord response: $resp"
+
+
+          printf "%s" "$alaki" > out.txt
+
+          curl -sS -f \
+            -F 'payload_json={"embeds":[{"type":"rich","title":"Lorem sample","description":"See attached file"}]}' \
+            -F "file1=@out.txt;type=text/plain" \
+            "$DISCORD_HOOK?wait=true" >/dev/null
