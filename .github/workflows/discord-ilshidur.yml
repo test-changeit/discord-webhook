@@ -8,8 +8,7 @@ jobs:
       LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_HOOK }}
     steps:
-      - name: Build embeds JSON
-        id: mk
+      - name: Build embeds JSON and export as DISCORD_EMBEDS
         run: |
           python3 - <<'PY'
           import os, json
@@ -19,17 +18,15 @@ jobs:
           embeds = {"embeds":[{"title":"Lorem sample (Ilshidur)","description":f"```text\n{s}\n```"}]}
           open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=False))
           PY
+          {
+            echo 'DISCORD_EMBEDS<<EOF'
+            cat embeds.json
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
       - name: Send via Ilshidur/action-discord
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ vars.NULL }}
+          DISCORD_EMBEDS: ${{ env.DISCORD_EMBEDS }}
         with:
           args: "sending embed…"
-      - name: Re-run with embeds (authoritative)
-        uses: Ilshidur/action-discord@0.4.0
-        env:
-          DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ file('./embeds.json') }}
-        with:
-          args: " "
