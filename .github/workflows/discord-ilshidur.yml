@@ -18,16 +18,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          EMBEDS_JSON=$(python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; 
-          desc='```\n'+s+'\n```'; 
-          embeds=[{'title':'Lorem sample (Ilshidur)','description':desc}]; 
-          print(json.dumps(embeds, ensure_ascii=False, separators=(',',':')))"); 
+          EMBEDS_JSON=$(python3 - <<'PY'
+          import os, json
+          n = int(os.getenv('LOREM_LENGTH') or '500')
+          base = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
+          s = (base*((n//len(base))+2))[:n]
+          desc = f"```text\n{s}\n```"
+          embeds = [ { "type":"rich", "title":"Lorem sample (Ilshidur)", "description": desc } ]
+          print(json.dumps(embeds, ensure_ascii=False, separators=(',',':')))
+          PY
+          )
           echo "embeds=${EMBEDS_JSON}" >> "$GITHUB_OUTPUT"
 
       - name: Send via Ilshidur/action-discord
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ steps.build.outputs.embeds }}
+          # نقل‌قول تکی جلوی به‌هم‌ریختن یمل/اکشن را می‌گیرد
+          DISCORD_EMBEDS: '${{ steps.build.outputs.embeds }}'
         with:
           args: "sending embed..."
