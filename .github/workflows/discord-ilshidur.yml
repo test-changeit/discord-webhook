@@ -15,31 +15,20 @@ jobs:
       - name: Checkout (optional)
         uses: actions/checkout@v4
 
-      - name: Build embeds JSON
+      - name: Build embeds JSON (single-line)
+        id: build
         shell: bash
         run: |
           set -euo pipefail
-          python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; embeds={'embeds':[{'title':'Lorem sample (Ilshidur)','description':'```text\\n'+s+'\\n```'}]}; open('embeds.json','w',encoding='utf-8').write(json.dumps(embeds, ensure_ascii=False))"
+          EMBEDS_JSON=$(python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; desc='```text\n'+s+'\n```'; embeds={'embeds':[{'title':'Lorem sample (Ilshidur)','description':desc}]}; print(json.dumps(embeds, ensure_ascii=False, separators=(',',':')))")
 
-      - name: Export DISCORD_EMBEDS to env
-        shell: bash
-        run: |
-          set -euo pipefail
-          {
-            echo 'DISCORD_EMBEDS<<__EMBEDS__'
-            cat embeds.json
-            echo '__EMBEDS__'
-          } >> "$GITHUB_ENV"
+          # register as step output
+          echo "embeds=${EMBEDS_JSON}" >> "$GITHUB_OUTPUT"
 
       - name: Send via Ilshidur/action-discord
         uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
-          DISCORD_EMBEDS: ${{ env.DISCORD_EMBEDS }}
+          DISCORD_EMBEDS: ${{ steps.build.outputs.embeds }}
         with:
           args: "sending embed..."
-
-      - name: Log payload size (optional)
-        if: always()
-        shell: bash
-        run: wc -c < embeds.json
