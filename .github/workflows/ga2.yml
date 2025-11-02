@@ -1,4 +1,4 @@
-name: Discord Lorem (push)
+name: Discord Lorem (push) embed version
 on:
   push:
 
