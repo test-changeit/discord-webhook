@@ -6,9 +6,9 @@ jobs:
   ilshidur:
     runs-on: ubuntu-latest
     env:
-      # Set this in repo "Variables" (optional). If unset, defaults to 500.
+      # Optional (defaults to 500 if unset)
       LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
-      # Set this in repo "Secrets": DISCORD_HOOK
+      # REQUIRED secret
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_HOOK }}
 
     steps:
@@ -19,12 +19,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python3 -c 'import os,json
-n=int(os.getenv("LOREM_LENGTH") or "500")
-base="Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-s=(base*((n//len(base))+2))[:n]
-embeds={"embeds":[{"title":"Lorem sample (Ilshidur)","description":f"```text\n{s}\n```"}]}
-open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=False))'
+          python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; embeds={'embeds':[{'title':'Lorem sample (Ilshidur)','description':'```text\\n'+s+'\\n```'}]}; open('embeds.json','w',encoding='utf-8').write(json.dumps(embeds, ensure_ascii=False))"
 
       - name: Export DISCORD_EMBEDS to env
         shell: bash
@@ -42,10 +37,9 @@ open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=F
           DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
           DISCORD_EMBEDS: ${{ env.DISCORD_EMBEDS }}
         with:
-          args: "sending embed…"
+          args: "sending embed..."
 
-      # Optional: quick sanity check
-      - name: Log payload size
+      - name: Log payload size (optional)
         if: always()
         shell: bash
         run: wc -c < embeds.json
