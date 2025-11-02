@@ -1,0 +1,23 @@
+name: Discord Lorem (push)
+
+on:
+  push:
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate lorem and post to Discord
+        shell: bash
+        env:
+          LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
+          DISCORD_HOOK: ${{ secrets.DISCORD_HOOK }}
+        run: |
+          alaki="$(yes 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. ' | tr -d '\n' | head -c "$LOREM_LENGTH")"
+
+          echo "$alaki"
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d '{
+              "content": "```text\n'"$alaki"'\n```"
+            }' "$DISCORD_HOOK"
