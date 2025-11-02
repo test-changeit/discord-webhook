@@ -1,0 +1,35 @@
+name: Discord (Ilshidur) on push
+on: { push: {} }
+
+jobs:
+  ilshidur:
+    runs-on: ubuntu-latest
+    env:
+      LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_HOOK }}
+    steps:
+      - name: Build embeds JSON
+        id: mk
+        run: |
+          python3 - <<'PY'
+          import os, json
+          n = int(os.environ["LOREM_LENGTH"])
+          base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+          s = (base * ((n // len(base)) + 2))[:n]
+          embeds = {"embeds":[{"title":"Lorem sample (Ilshidur)","description":f"```text\n{s}\n```"}]}
+          open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=False))
+          PY
+      - name: Send via Ilshidur/action-discord
+        uses: Ilshidur/action-discord@0.4.0
+        env:
+          DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: ${{ vars.NULL }}
+        with:
+          args: "sending embed…"
+      - name: Re-run with embeds (authoritative)
+        uses: Ilshidur/action-discord@0.4.0
+        env:
+          DISCORD_WEBHOOK: ${{ env.DISCORD_WEBHOOK }}
+          DISCORD_EMBEDS: ${{ file('./embeds.json') }}
+        with:
+          args: " "
