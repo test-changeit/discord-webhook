@@ -6,7 +6,7 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate lorem and post to Discord (as embed)
+      - name: Generate lorem and post to Discord (raw text -> var -> JSON)
         shell: bash
         env:
           LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
@@ -15,34 +15,23 @@ jobs:
           set -euo pipefail
 
           python3 - <<'PY'
-          import os, json
+          import os
           n = int(os.environ["LOREM_LENGTH"])
           base = "@rosen-bridge/abstract-extractor@2.1.2-a25ac382\n@rosen-bridge/abstract-observation-extractor@0.2.0-a25ac382\n@rosen-bridge/abstract-scanner@0.2.1-a25ac382\n@rosen-bridge/address-extractor@6.2.2-a25ac382\n@rosen-bridge/evm-address-tx-extractor@1.2.2-a25ac382\n@rosen-bridge/fraud-extractor@2.2.2-a25ac382\n@rosen-bridge/scanner-interfaces@0.2.1-a25ac382\n@rosen-bridge/tx-id-extractor@2.4.2-a25ac382\n@rosen-bridge/watcher-data-extractor@12.2.2-a25ac382\n@rosen-bridge/bitcoin-observation-extractor@6.3.0-a25ac382\n@rosen-bridge/bitcoin-runes-observation-extractor@0.3.0-a25ac382\n@rosen-bridge/cardano-observation-extractor@0.2.0-a25ac382\n@rosen-bridge/ergo-observation-extractor@0.2.0-a25ac382\n@rosen-bridge/evm-observation-extractor@5.3.0-a25ac382\n@rosen-bridge/bitcoin-scanner@0.2.1-a25ac382\n@rosen-bridge/cardano-scanner@0.2.1-a25ac382\n@rosen-bridge/ergo-scanner@0.1.2-a25ac382\n@rosen-bridge/evm-scanner@0.1.2-a25ac382\n@rosen-chains/abstract-chain@15.0.1\n@rosen-chains/binance@3.0.1\n@rosen-chains/bitcoin@9.0.1\n@rosen-chains/bitcoin-runes@3.0.0\n@rosen-chains/cardano@15.0.0\n@rosen-chains/doge@3.0.1\n@rosen-chains/ergo@13.0.1\n@rosen-chains/ethereum@3.0.1\n@rosen-chains/evm@9.0.1\n@rosen-chains/bitcoin-esplora@5.0.1\n@rosen-chains/bitcoin-runes-rpc@2.0.0\n@rosen-chains/cardano-blockfrost-network@10.0.0\n@rosen-chains/cardano-koios-network@13.0.0\n@rosen-chains/doge-blockcypher@1.0.1\n@rosen-chains/doge-esplora@2.0.1\n@rosen-chains/doge-rpc@1.0.1\n@rosen-chains/ergo-explorer-network@10.0.1\n@rosen-chains/ergo-node-network@10.0.1\n@rosen-chains/evm-rpc@4.0.1\n"
           s = (base * ((n // len(base)) + 2))[:n]
+          s = s[:4084]  # leave room for code fences
+          print(f"```text\n{s}\n```")
+          PY > payload.txt
 
-          s = s[:4084]
+          # بارگذاری متن در متغیر
+          payload_text="$(cat payload.txt)"
 
-          payload = {
-            "embeds": [{
-              "type": "rich",
-              "title": "Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)Lorem sample (embed)",
-              "description": f"```text\n{s}\n```"
-            }]
-          }
-          open("payload.json","w",encoding="utf-8").write(
-            json.dumps(payload, ensure_ascii=False, separators=(",",":"))
-          )
-          PY
+          # ساخت JSON با jq از روی متغیر (بدون title)
+          json="$(jq -Rn --arg desc "$payload_text" '{embeds:[{type:"rich",description:$desc}]}' )"
 
+          # ارسال
           resp="$(curl -sS -f -H "Content-Type: application/json" \
-                    --data-binary @payload.json "$DISCORD_HOOK?wait=true")"
+                 --data "$json" \
+                 "$DISCORD_HOOK?wait=true")"
 
           echo "::notice::Discord response: $resp"
-
-
-          printf "%s" "$alaki" > out.txt
-
-          curl -sS -f \
-            -F 'payload_json={"embeds":[{"type":"rich","title":"Lorem sample","description":"See attached file"}]}' \
-            -F "file1=@out.txt;type=text/plain" \
-            "$DISCORD_HOOK?wait=true" >/dev/null
