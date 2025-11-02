@@ -18,7 +18,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          EMBEDS_JSON=$(python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; desc='```text\n'+s+'\n```'; embeds=[{'title':'Lorem sample (Ilshidur)','description':desc}]; print(json.dumps(embeds, ensure_ascii=False, separators=(',',':')))"); echo "embeds=${EMBEDS_JSON}" >> "$GITHUB_OUTPUT"
+          EMBEDS_JSON=$(python3 -c "import os,json; n=int(os.getenv('LOREM_LENGTH') or '500'); base='Lorem ipsum dolor sit amet, consectetur adipiscing elit. '; s=(base*((n//len(base))+2))[:n]; 
+          desc='```\n'+s+'\n```'; 
+          embeds=[{'title':'Lorem sample (Ilshidur)','description':desc}]; 
+          print(json.dumps(embeds, ensure_ascii=False, separators=(',',':')))"); 
+          echo "embeds=${EMBEDS_JSON}" >> "$GITHUB_OUTPUT"
 
       - name: Send via Ilshidur/action-discord
         uses: Ilshidur/action-discord@0.4.0
