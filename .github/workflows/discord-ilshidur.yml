@@ -1,28 +1,50 @@
 name: Discord (Ilshidur) on push
-on: { push: {} }
+on:
+  push: {}
 
 jobs:
   ilshidur:
     runs-on: ubuntu-latest
     env:
+      # Optional: set in Repo Settings → Variables → LOREM_LENGTH, else default used in Python
       LOREM_LENGTH: ${{ vars.LOREM_LENGTH }}
+      # REQUIRED: set in Repo Settings → Secrets and variables → Actions → Secrets → DISCORD_HOOK
       DISCORD_WEBHOOK: ${{ secrets.DISCORD_HOOK }}
+
     steps:
+      - name: Checkout (for completeness, even if not used)
+        uses: actions/checkout@v4
+
       - name: Build embeds JSON and export as DISCORD_EMBEDS
+        shell: bash
         run: |
+          set -euo pipefail
+
+          # Build the JSON file
           python3 - <<'PY'
           import os, json
-          n = int(os.environ["LOREM_LENGTH"])
+          n = int(os.environ.get("LOREM_LENGTH") or 500)  # default if repo var is unset
           base = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
           s = (base * ((n // len(base)) + 2))[:n]
-          embeds = {"embeds":[{"title":"Lorem sample (Ilshidur)","description":f"```text\n{s}\n```"}]}
-          open("embeds.json","w",encoding="utf-8").write(json.dumps(embeds, ensure_ascii=False))
-          PY
+          embeds = {
+            "embeds": [
+              {
+                "title": "Lorem sample (Ilshidur)",
+                "description": f"```text\n{s}\n```"
+              }
+            ]
+          }
+          with open("embeds.json","w",encoding="utf-8") as f:
+              json.dump(embeds, f, ensure_ascii=False)
+                PY
+
+          # Export multi-line env var to $GITHUB_ENV via a unique delimiter
           {
-            echo 'DISCORD_EMBEDS<<EOF'
+            echo 'DISCORD_EMBEDS<<__EMBEDS__'
             cat embeds.json
-            echo 'EOF'
+            echo '__EMBEDS__'
           } >> "$GITHUB_ENV"
+
       - name: Send via Ilshidur/action-discord
         uses: Ilshidur/action-discord@0.4.0
         env:
@@ -30,3 +52,9 @@ jobs:
           DISCORD_EMBEDS: ${{ env.DISCORD_EMBEDS }}
         with:
           args: "sending embed…"
+
+      # Optional: simple sanity checks / logging
+      - name: Log payload size
+        if: always()
+        run: |
+          echo "Embeds bytes: $(wc -c < embeds.json)"
